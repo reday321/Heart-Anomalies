@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECG Anomaly Detection</title>
+    <link rel="icon" href="https://img.icons8.com/ios-filled/50/6610f2/heart-with-pulse.png" type="image/png">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="https://img.icons8.com/ios-filled/50/ffffff/heart-with-pulse.png" alt="ECG Logo" class="navbar-logo">
+                ECG Analyzer
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container position-relative">
+            <h1>Detect Heart Anomalies from ECG Signal</h1>
+            <p>Upload your ECG signal and get instant prediction using AI</p>
+        </div>
+        <svg class="hero-wave" viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="#f5f7fa"/>
+        </svg>
+    </section>
+
+    <!-- Upload Card -->
+    <div class="container flex-grow-1">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-6 col-xl-5">
+                <div class="card card-upload mt-4 mb-5">
+                    <h3 class="mb-4 text-center text-primary">Upload ECG Signal</h3>
+                    <form method="POST" enctype="multipart/form-data" autocomplete="off">
+                        <div class="mb-3 text-start">
+                            <label for="file-upload" class="form-label">Select ECG CSV File</label>
+                            <input class="form-control" id="file-upload" type="file" name="file" accept=".csv" required aria-label="ECG CSV file">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-custom">Predict</button>
+                        </div>
+                    </form>
+
+                    {% if prediction is not none %}
+                        <div class="result-box mt-4">
+                            <h4>Prediction Result:</h4>
+                            <p>{{ prediction }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+   <footer class="mt-auto">
+    <div class="container">
+        <div class="footer-links mb-2">
+            <a href="https://github.com/reday321/Heart-Anomalies" target="_blank" rel="noopener">GitHub</a>
+            <span class="mx-2">|</span>
+            <a href="#">Privacy Policy</a>
+        </div>
+        <p>© 2025 ECG Analyzer. All rights reserved.</p>
+    </div>
+</footer>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

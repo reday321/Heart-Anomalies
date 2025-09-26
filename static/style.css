@@ -1,0 +1,138 @@
+html, body {
+            height: 100%;
+        }
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #23272f;
+        }
+        /* Navbar */
+        .navbar {
+            background: #fff;
+            border-bottom: 1px solid #ececec;
+            box-shadow: 0 2px 8px rgba(102,16,242,0.04);
+        }
+        .navbar-brand {
+            color: #6610f2 !important;
+            font-weight: 800;
+            font-size: 1.7rem;
+            letter-spacing: 1px;
+        }
+        .navbar-logo {
+            width: 32px;
+            height: 32px;
+            margin-right: 8px;
+        }
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(100deg, #6f42c1 0%, #6610f2 100%);
+            color: #fff;
+            padding: 80px 0 50px 0;
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            box-shadow: 0 5px 15px rgba(102,16,242,0.08);
+            margin-bottom: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero h1 {
+            font-weight: 800;
+            font-size: 2.8rem;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        }
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 0;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .hero-wave {
+            position: absolute;
+            left: 0;
+            bottom: -1px;
+            width: 100%;
+            height: 60px;
+            z-index: 2;
+        }
+        /* Card */
+        .card-upload {
+            border-radius: 22px;
+            box-shadow: 0 10px 25px rgba(102,16,242,0.10), 0 2px 8px rgba(0,0,0,0.07);
+            padding: 40px 36px 36px 36px;
+            background: #fff;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1.5px solid #ece9f7;
+            margin-top: 30px;
+        }
+        .card-upload:hover {
+            transform: translateY(-7px) scale(1.01);
+            box-shadow: 0 16px 32px rgba(102,16,242,0.13), 0 2px 8px rgba(0,0,0,0.09);
+        }
+        .form-label {
+            font-weight: 600;
+            color: #6610f2;
+            margin-bottom: 6px;
+        }
+        .form-control[type="file"] {
+            padding: 8px 10px;
+            background: #f5f7fa;
+            border-radius: 12px;
+        }
+        .btn-custom {
+            background: #6610f2;
+            color: white;
+            font-weight: bold;
+            border-radius: 30px;
+            padding: 10px 25px;
+            transition: 0.3s;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 8px rgba(102,16,242,0.08);
+        }
+        .btn-custom:hover {
+            background: #5a0dc4;
+            color: #fff;
+        }
+
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 15px;
+            background: #f3f0fa;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(102,16,242,0.07);
+            color: #23272f;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px 0 10px 0;
+            background: #fff;
+            color: #888;
+            border-top: 1px solid #ececec;
+            margin-top: auto;
+            font-size: 1rem;
+        }
+        .footer-links a {
+            color: #6610f2;
+            text-decoration: none;
+            margin: 0 8px;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover {
+            color: #4b0ca6;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .card-upload {
+                padding: 24px 8px 20px 8px;
+            }
+            .hero h1 {
+                font-size: 2rem;
+            }
+        }
