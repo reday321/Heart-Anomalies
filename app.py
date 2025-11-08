@@ -20,6 +20,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Disable file caching
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'dat', 'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -33,13 +34,6 @@ def allowed_file(filename):
 def generate_advice(prediction_result, probability):
     """
     Generate actionable advice based on prediction result and probability.
-    
-    Args:
-        prediction_result: "Normal" or "Abnormal"
-        probability: Prediction probability (0.0 to 1.0)
-    
-    Returns:
-        Dictionary with advice information
     """
     if prediction_result == "Normal":
         return {
@@ -97,70 +91,53 @@ def generate_advice(prediction_result, probability):
 # Load models at startup
 try:
     models = load_models()
-    logger.info("Models loaded successfully")
+    logger.info("All models loaded successfully")
 except Exception as e:
     logger.error(f"Error loading models: {str(e)}")
     models = None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    # Initialize all variables to None/empty
+    # Initialize all variables
     prediction = None
     error_message = None
     ecg_plot_url = None
     probability = None
     advice = None
     
-    # Handle GET requests
-    if request.method == 'GET':
-        # Check if there are results in session (from POST-redirect-GET)
-        if 'prediction' in session:
-            prediction = session.pop('prediction', None)
-            probability = session.pop('probability', None)
-            ecg_plot_url = session.pop('ecg_plot_url', None)
-            advice = session.pop('advice', None)
-            error_message = None
-            
-            logger.info(f"Displaying results from session: {prediction}, probability: {probability}")
-        else:
-            # No session data - fresh page load
-            prediction = None
-            probability = None
-            ecg_plot_url = None
-            advice = None
-            error_message = None
-        
-        # Render template
-        response = make_response(render_template('index.html', 
-                         prediction=prediction, 
-                         error=error_message, 
-                         ecg_plot_url=ecg_plot_url, 
-                         probability=probability, 
-                         advice=advice))
-        # Add cache control headers to prevent browser caching
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        return response
-    
     if request.method == 'POST':
         # Check if models are loaded
         if models is None:
             error_message = "Error: Models not loaded. Please check server configuration."
             logger.error("Models not loaded")
-            return render_template('index.html', prediction=prediction, error=error_message, ecg_plot_url=ecg_plot_url)
+            return render_template('index.html', 
+                                 prediction=prediction, 
+                                 error=error_message, 
+                                 ecg_plot_url=ecg_plot_url, 
+                                 probability=probability, 
+                                 advice=advice)
         
         # Check if a file was uploaded
         if 'file' not in request.files:
             error_message = "No file selected. Please upload a valid ECG file."
             logger.warning("No file part in request")
-            return render_template('index.html', prediction=prediction, error=error_message, ecg_plot_url=ecg_plot_url)
+            return render_template('index.html', 
+                                 prediction=prediction, 
+                                 error=error_message, 
+                                 ecg_plot_url=ecg_plot_url, 
+                                 probability=probability, 
+                                 advice=advice)
             
         file = request.files['file']
         if file.filename == '':
             error_message = "No file selected. Please upload a valid ECG file."
             logger.warning("No selected file")
-            return render_template('index.html', prediction=prediction, error=error_message, ecg_plot_url=ecg_plot_url)
+            return render_template('index.html', 
+                                 prediction=prediction, 
+                                 error=error_message, 
+                                 ecg_plot_url=ecg_plot_url, 
+                                 probability=probability, 
+                                 advice=advice)
             
         if file and allowed_file(file.filename):
             filepath = None
@@ -170,16 +147,21 @@ def index():
                 if not filename:
                     error_message = "Invalid file name. Please upload a valid ECG file."
                     logger.warning("Invalid filename after securing")
-                    return render_template('index.html', prediction=prediction, error=error_message, ecg_plot_url=ecg_plot_url)
+                    return render_template('index.html', 
+                                         prediction=prediction, 
+                                         error=error_message, 
+                                         ecg_plot_url=ecg_plot_url, 
+                                         probability=probability, 
+                                         advice=advice)
                 
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
                 logger.info(f"File saved successfully: {filepath}")
                 
-                # Process the ECG signal (get both processed and raw signal)
+                # Process the ECG signal
                 logger.info("Processing ECG signal...")
-                processed_signal, raw_signal = process_ecg_file(filepath, return_raw=True)
-                logger.info("Signal processed successfully")
+                processed_signal, raw_signal = process_ecg_file(filepath, return_raw=True, target_length=1000)
+                logger.info(f"Signal processed successfully. Shape: {processed_signal.shape}")
                 
                 # Generate ECG visualization
                 try:
@@ -190,22 +172,21 @@ def index():
                     logger.info(f"ECG plot generated: {ecg_plot_url}")
                 except Exception as e:
                     logger.warning(f"Could not generate ECG plot: {str(e)}")
-                    # Continue without plot if visualization fails
+                    ecg_plot_url = None
                 
                 # Get prediction
                 logger.info("Making prediction...")
-                pred_result = get_ensemble_prediction(processed_signal, models)
-                probability = float(pred_result)  # Ensure it's a float
-                logger.info(f"Prediction result: {pred_result}, Type: {type(pred_result)}")
-                logger.info(f"Probability value: {probability:.6f}")
+                ensemble_prob, dl_prob, xgb_prob, final_prediction = get_ensemble_prediction(processed_signal, models)
+                probability = float(ensemble_prob)
                 
                 # Format prediction result with threshold = 0.5
-                if pred_result > 0.5:
+                if final_prediction == 1:
                     prediction_result = "Abnormal"
                     prediction = "Abnormal (Possible arrhythmia detected)"
                 else:
                     prediction_result = "Normal"
                     prediction = "Normal"
+                
                 logger.info(f"Final prediction: {prediction} (probability: {probability:.6f})")
                 
                 # Generate actionable advice
@@ -217,29 +198,21 @@ def index():
                 session['probability'] = probability
                 session['ecg_plot_url'] = ecg_plot_url
                 session['advice'] = advice
+                session['dl_prob'] = float(dl_prob)
+                session['xgb_prob'] = float(xgb_prob)
                 
                 # Use POST-redirect-GET pattern to prevent resubmission on refresh
-                response = redirect(url_for('index'))
-                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-                response.headers['Pragma'] = 'no-cache'
-                response.headers['Expires'] = '0'
-                return response
+                return redirect(url_for('index'))
                 
             except ValueError as e:
-                # Handle preprocessing/format errors
                 error_message = f"Invalid file format. Please upload a valid ECG file (.dat or .csv). Error: {str(e)}"
                 logger.error(f"ValueError processing file: {str(e)}", exc_info=True)
-                return render_template('index.html', prediction=None, error=error_message, ecg_plot_url=None, probability=None, advice=None)
             except RuntimeError as e:
-                # Handle model prediction errors
                 error_message = f"Error during prediction: {str(e)}"
                 logger.error(f"RuntimeError during prediction: {str(e)}", exc_info=True)
-                return render_template('index.html', prediction=None, error=error_message, ecg_plot_url=None, probability=None, advice=None)
             except Exception as e:
-                # Handle other errors
                 error_message = f"Error processing file: {str(e)}"
                 logger.error(f"Unexpected error processing file: {str(e)}", exc_info=True)
-                return render_template('index.html', prediction=None, error=error_message, ecg_plot_url=None, probability=None, advice=None)
             finally:
                 # Clean up uploaded file
                 if filepath and os.path.exists(filepath):
@@ -248,10 +221,54 @@ def index():
                         logger.info("Temporary file removed")
                     except Exception as e:
                         logger.warning(f"Could not remove temporary file: {str(e)}")
+                
+                # Clean up plot file if there was an error and plot was created
+                if error_message and plot_path and os.path.exists(plot_path):
+                    try:
+                        os.remove(plot_path)
+                        logger.info("Plot file removed due to error")
+                    except Exception as e:
+                        logger.warning(f"Could not remove plot file: {str(e)}")
         else:
             error_message = "Invalid file format. Please upload a valid ECG file (.dat or .csv)."
             logger.warning(f"Invalid file format: {file.filename if file else 'None'}")
-            return render_template('index.html', prediction=None, error=error_message, ecg_plot_url=None, probability=None, advice=None)
+    
+    # Handle GET requests and display results from session
+    if request.method == 'GET':
+        # Check if there are results in session (from POST-redirect-GET)
+        if 'prediction' in session:
+            prediction = session.pop('prediction', None)
+            probability = session.pop('probability', None)
+            ecg_plot_url = session.pop('ecg_plot_url', None)
+            advice = session.pop('advice', None)
+            dl_prob = session.pop('dl_prob', None)
+            xgb_prob = session.pop('xgb_prob', None)
+            error_message = None
+            
+            logger.info(f"Displaying results from session: {prediction}")
+    
+    # Render template for both GET and POST (when not redirecting)
+    response = make_response(render_template('index.html', 
+                         prediction=prediction, 
+                         error=error_message, 
+                         ecg_plot_url=ecg_plot_url, 
+                         probability=probability, 
+                         advice=advice))
+    
+    # Add cache control headers to prevent browser caching
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.errorhandler(413)
+def too_large(e):
+    return render_template('index.html', 
+                         prediction=None, 
+                         error="File too large. Please upload a file smaller than 16MB.", 
+                         ecg_plot_url=None, 
+                         probability=None, 
+                         advice=None), 413
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
