@@ -41,28 +41,39 @@ def get_ensemble_prediction(processed_signal, models):
     """
     Get ensemble prediction from all models.
     
+    Ensemble formula: ensemble_prob = 0.6 × DL_prob + 0.4 × XGBoost_prob
+    Where DL_prob comes from best_dl_model.h5 (primary model).
+    
     Args:
-        processed_signal: Preprocessed ECG signal of shape (1, sequence_length, 1)
+        processed_signal: Preprocessed ECG signal of shape (1, sequence_length, 12)
         models: Dictionary containing all three models
     
     Returns:
-        Final prediction probability
+        Final prediction probability (0.0 to 1.0)
     """
     try:
-        # Get predictions from deep learning models
+        # Get prediction from primary deep learning model (best_dl_model.h5)
         dl_pred = models['dl_model'].predict(processed_signal, verbose=0)[0][0]
-        backup_pred = models['backup_model'].predict(processed_signal, verbose=0)[0][0]
         
-        # Average the deep learning predictions
-        dl_ensemble_pred = (dl_pred + backup_pred) / 2
+        # Ensure prediction is a scalar (not array)
+        if isinstance(dl_pred, np.ndarray):
+            dl_pred = float(dl_pred)
+        else:
+            dl_pred = float(dl_pred)
         
-        # For XGBoost, we need to reshape the signal to 1D
+        # For XGBoost, we need to reshape the signal to 1D (flatten)
         xgb_input = xgb.DMatrix(processed_signal.reshape(1, -1))
         xgb_pred = models['xgb_model'].predict(xgb_input)[0]
         
+        # Ensure prediction is a scalar
+        if isinstance(xgb_pred, np.ndarray):
+            xgb_pred = float(xgb_pred)
+        else:
+            xgb_pred = float(xgb_pred)
+        
         # Calculate ensemble prediction
-        # 60% weight to deep learning models, 40% to XGBoost
-        ensemble_prob = 0.6 * dl_ensemble_pred + 0.4 * xgb_pred
+        # 60% weight to deep learning model, 40% to XGBoost
+        ensemble_prob = 0.6 * dl_pred + 0.4 * xgb_pred
         
         return ensemble_prob
         

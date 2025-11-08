@@ -6,3 +6,4 @@ tensorflow>=2.7.0
 xgboost>=1.5.0,<3.0.0
 wfdb>=3.4.1
 werkzeug>=2.0.1
+matplotlib>=3.5.0

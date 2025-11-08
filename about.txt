@@ -1,0 +1,17 @@
+The system is working correctly. The model processed your ECG file and returned a prediction.
+What this means
+"Abnormal (Possible arrhythmia detected)" indicates:
+The ensemble probability exceeded 0.5 (threshold)
+The model detected features consistent with abnormal ECG patterns
+Understanding the prediction
+The model uses:
+CNN + BiLSTM deep learning model (60% weight)
+XGBoost model (40% weight)
+Threshold: 0.5
+Note
+This is a predictive tool and not a medical diagnosis. Always consult healthcare professionals for medical decisions.
+Next steps
+Upload different ECG files to see how predictions vary
+Compare predictions across different files
+The system handles both .dat (MIT-BIH) and .csv formats
+If you want to see the exact probability score or make adjustments, let me know.
